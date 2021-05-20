@@ -60,7 +60,7 @@ steps:
       Write-host "PERFORMING CODEQL ANALYSIS"
       New-Item -ItemType "directory" -Path $(System.DefaultWorkingDirectory)\codeql-sarif
       New-Item -ItemType "directory" -Path $(System.DefaultWorkingDirectory)\codeql-sarif\code-scanning-alerts.sarif
-      & $(System.DefaultWorkingDirectory)\codeql\codeql database analyze $(System.DefaultWorkingDirectory)\codeql-database $(System.DefaultWorkingDirectory)\codeql\qlpacks\codeql-csharp\codeql-suites\csharp-code-scanning.qls --format=sarif-latest --output=$(DefaultWorkingDirectory)\codeql-sarif\code-scanning-alerts.sarif
+      & $(System.DefaultWorkingDirectory)\codeql\codeql database analyze $(System.DefaultWorkingDirectory)\codeql-database $(System.DefaultWorkingDirectory)\codeql\qlpacks\codeql-csharp\codeql-suites\csharp-code-scanning.qls --format=sarif-latest --output=$(System.DefaultWorkingDirectory)\codeql-sarif\code-scanning-alerts.sarif
       
 - task: PowerShell@2
   displayName: Upload CodeQL Results
