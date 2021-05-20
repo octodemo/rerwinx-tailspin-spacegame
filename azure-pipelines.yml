@@ -32,19 +32,57 @@ steps:
   displayName: 'Write build info'
   workingDirectory: $(wwwrootDir)
 
-- task: DotNetCoreCLI@2
-  displayName: 'Restore project dependencies'
+- task: PowerShell@2
+  displayName: CodeQL Setup
   inputs:
-    command: 'restore'
-    projects: '**/*.csproj'
+    targetType: inline
+    script: |     
+      Write-Host "DOWNLOADING CODEQL LINUX BUNDLE"
+      cd $(DefaultWorkingDirectory)
+      Invoke-WebRequest -uri https://github.com/github/codeql-action/releases/latest/download/codeql-bundle-linux64.tar.gz -OutFile $(System.DefaultWorkingDirectory)\codeql-bundle-linux64.tar.gz
+      tar zxf ./codeql-bundle-linux64.tar.gz
 
-- task: DotNetCoreCLI@2
-  displayName: 'Build the project - $(buildConfiguration)'
+- task: PowerShell@2
+  displayName: CodeQL Initialisation
   inputs:
-    command: 'build'
-    arguments: '--no-restore --configuration $(buildConfiguration)'
-    projects: '**/*.csproj'
+    targetType: inline
+    script: |
+      Write-Host "CREATING CODEQL DATABASE"    
+      & $(DefaultWorkingDirectory)\codeql\codeql database create $(DefaultWorkingDirectory)\codeql-database --language=csharp 
+      #dotnet restore **/*.sln
+      #dotnet build **/*.csproj --configuration $(BuildConfiguration) --no-restore
 
+- task: PowerShell@2
+  displayName: CodeQL Analysis
+  inputs:
+    targetType: inline
+    script: |
+      Write-host "PERFORMING CODEQL ANALYSIS"
+      New-Item -ItemType "directory" -Path $(DefaultWorkingDirectory)\codeql-sarif
+      New-Item -ItemType "directory" -Path $(DefaultWorkingDirectory)\codeql-sarif\code-scanning-alerts.sarif
+      & $(DefaultWorkingDirectory)\codeql\codeql database analyze $(DefaultWorkingDirectory)\codeql-database $(DefaultWorkingDirectory)\codeql\qlpacks\codeql-csharp\codeql-suites\csharp-code-scanning.qls --format=sarif-latest --output=$(DefaultWorkingDirectory)\codeql-sarif\code-scanning-alerts.sarif
+      
+- task: PowerShell@2
+  displayName: Upload CodeQL Results
+  inputs:
+    targetType: inline
+    script: |
+      Write-host "UPLOAD CODEQL RESULTS"      
+      & $(DefaultWorkingDirectory)\codeql\codeql github upload-results --repository=octodemo/rerwinx-tailspin-spacegame --ref=$(Build.SourceBranch) --commit=$(Build.SourceVersion) --sarif=$(DefaultWorkingDirectory)\codeql-sarif\code-scanning-alerts.sarif --github-auth-stdin=$(MY_GITHUB_TOKEN)
+
+#- task: DotNetCoreCLI@2
+#  displayName: 'Restore project dependencies'
+#  inputs:
+#    command: 'restore'
+#    projects: '**/*.csproj'
+#
+#- task: DotNetCoreCLI@2
+#  displayName: 'Build the project - $(buildConfiguration)'
+#  inputs:
+#    command: 'build'
+#    arguments: '--no-restore --configuration $(buildConfiguration)'
+#    projects: '**/*.csproj'
+#
 - task: DotNetCoreCLI@2
   displayName: 'Publish the project - $(buildConfiguration)'
   inputs:
