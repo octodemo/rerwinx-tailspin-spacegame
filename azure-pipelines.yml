@@ -38,7 +38,7 @@ steps:
     targetType: inline
     script: |     
       Write-Host "DOWNLOADING CODEQL LINUX BUNDLE"
-      cd $(DefaultWorkingDirectory)
+      cd $(System.DefaultWorkingDirectory)
       Invoke-WebRequest -uri https://github.com/github/codeql-action/releases/latest/download/codeql-bundle-linux64.tar.gz -OutFile $(System.DefaultWorkingDirectory)\codeql-bundle-linux64.tar.gz
       tar zxf ./codeql-bundle-linux64.tar.gz
 
@@ -48,7 +48,7 @@ steps:
     targetType: inline
     script: |
       Write-Host "CREATING CODEQL DATABASE"    
-      & $(DefaultWorkingDirectory)\codeql\codeql database create $(DefaultWorkingDirectory)\codeql-database --language=csharp 
+      & $(System.DefaultWorkingDirectory)\codeql\codeql database create $(System.DefaultWorkingDirectory)\codeql-database --language=csharp 
       #dotnet restore **/*.sln
       #dotnet build **/*.csproj --configuration $(BuildConfiguration) --no-restore
 
@@ -58,9 +58,9 @@ steps:
     targetType: inline
     script: |
       Write-host "PERFORMING CODEQL ANALYSIS"
-      New-Item -ItemType "directory" -Path $(DefaultWorkingDirectory)\codeql-sarif
-      New-Item -ItemType "directory" -Path $(DefaultWorkingDirectory)\codeql-sarif\code-scanning-alerts.sarif
-      & $(DefaultWorkingDirectory)\codeql\codeql database analyze $(DefaultWorkingDirectory)\codeql-database $(DefaultWorkingDirectory)\codeql\qlpacks\codeql-csharp\codeql-suites\csharp-code-scanning.qls --format=sarif-latest --output=$(DefaultWorkingDirectory)\codeql-sarif\code-scanning-alerts.sarif
+      New-Item -ItemType "directory" -Path $(System.DefaultWorkingDirectory)\codeql-sarif
+      New-Item -ItemType "directory" -Path $(System.DefaultWorkingDirectory)\codeql-sarif\code-scanning-alerts.sarif
+      & $(System.DefaultWorkingDirectory)\codeql\codeql database analyze $(System.DefaultWorkingDirectory)\codeql-database $(System.DefaultWorkingDirectory)\codeql\qlpacks\codeql-csharp\codeql-suites\csharp-code-scanning.qls --format=sarif-latest --output=$(DefaultWorkingDirectory)\codeql-sarif\code-scanning-alerts.sarif
       
 - task: PowerShell@2
   displayName: Upload CodeQL Results
@@ -68,7 +68,7 @@ steps:
     targetType: inline
     script: |
       Write-host "UPLOAD CODEQL RESULTS"      
-      & $(DefaultWorkingDirectory)\codeql\codeql github upload-results --repository=octodemo/rerwinx-tailspin-spacegame --ref=$(Build.SourceBranch) --commit=$(Build.SourceVersion) --sarif=$(DefaultWorkingDirectory)\codeql-sarif\code-scanning-alerts.sarif --github-auth-stdin=$(MY_GITHUB_TOKEN)
+      & $(System.DefaultWorkingDirectory)\codeql\codeql github upload-results --repository=octodemo/rerwinx-tailspin-spacegame --ref=$(Build.SourceBranch) --commit=$(Build.SourceVersion) --sarif=$(System.DefaultWorkingDirectory)\codeql-sarif\code-scanning-alerts.sarif --github-auth-stdin=$(MY_GITHUB_TOKEN)
 
 #- task: DotNetCoreCLI@2
 #  displayName: 'Restore project dependencies'
